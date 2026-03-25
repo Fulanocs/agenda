@@ -9,7 +9,6 @@ header {
   color: white;
   padding: 15px;
   text-align: center;
-  font-size: 1.3rem;
 }
 
 section {
@@ -22,7 +21,6 @@ form {
   gap: 10px;
 }
 
-/* 📱 optimizado para dedo */
 input, select, button {
   padding: 14px;
   font-size: 1.1rem;
@@ -37,17 +35,14 @@ button {
   font-weight: bold;
 }
 
-/* 📋 turnos */
 .turno {
   background: white;
   padding: 15px;
   margin: 10px 0;
   border-radius: 10px;
   border-left: 6px solid #4CAF50;
-  font-size: 1.1rem;
 }
 
-/* scroll cómodo */
 #agenda, #lista-pacientes {
   max-height: 300px;
   overflow-y: auto;
