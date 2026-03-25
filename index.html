@@ -2,50 +2,37 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda Celular con Notificaciones</title>
+  <title>Agenda Pro</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Agenda Celular</h1>
-  </header>
 
-  <section id="agenda-container">
-    <h2>Agenda del Día</h2>
-    <div id="agenda"></div> <!-- Aquí se mostrarán los turnos de hoy -->
-  </section>
+<h1>Agenda de Turnos</h1>
 
-  <section id="nuevo-turno">
-    <h2>Nuevo Turno</h2>
-    <form id="form-turno">
-      <input type="text" id="nombre" placeholder="Nombre paciente" required>
-      <input type="tel" id="telefono" placeholder="Teléfono" required>
-      <input type="text" id="observaciones" placeholder="Observaciones">
-      <label>Duración:</label>
-      <select id="duracion">
-        <option value="60">1 hora</option>
-        <option value="90">1h 30 min</option>
-      </select>
-      
-      <!-- Primero la fecha -->
-      <label>Fecha:</label>
-      <input type="date" id="fecha" required>
+<div class="form">
+  <input type="text" id="nombre" placeholder="Nombre paciente">
+  
+  <input type="tel" id="telefono" placeholder="Teléfono (598...)">
 
-      <!-- Después la hora -->
-      <label>Hora:</label>
-      <select id="hora" disabled></select>
-      
-      <button type="submit">Agregar turno</button>
-    </form>
-  </section>
+  <label>Fecha:</label>
+  <input type="date" id="fecha">
 
-  <section id="historial">
-    <h2>Historial de Pacientes</h2>
-    <input type="text" id="buscar" placeholder="Buscar paciente...">
-    <div id="lista-pacientes"></div> <!-- Aquí se mostrarán los pacientes -->
-  </section>
+  <label>Duración:</label>
+  <select id="duracion">
+    <option value="60">1 hora</option>
+    <option value="90">1h 30 min</option>
+  </select>
 
-  <script src="script.js"></script>
+  <label>Hora:</label>
+  <select id="hora"></select>
+
+  <button onclick="agendar()">Agendar</button>
+</div>
+
+<h2>Turnos del día</h2>
+<div id="lista"></div>
+
+<script src="script.js"></script>
+
 </body>
 </html>
