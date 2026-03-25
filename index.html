@@ -2,37 +2,54 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agenda Pro</title>
+  <title>Agenda Celular</title>
+
+  <!-- 📱 IMPORTANTE -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>Agenda de Turnos</h1>
+<header>
+  <h1>Agenda Celular</h1>
+</header>
 
-<div class="form">
-  <input type="text" id="nombre" placeholder="Nombre paciente">
-  
-  <input type="tel" id="telefono" placeholder="Teléfono (598...)">
+<section>
+  <h2>Agenda del Día</h2>
+  <div id="agenda"></div>
+</section>
 
-  <label>Fecha:</label>
-  <input type="date" id="fecha">
+<section>
+  <h2>Nuevo Turno</h2>
+  <form id="form-turno">
+    <input type="text" id="nombre" placeholder="Nombre paciente" required>
+    
+    <input type="tel" id="telefono" placeholder="Teléfono (598...)" required>
 
-  <label>Duración:</label>
-  <select id="duracion">
-    <option value="60">1 hora</option>
-    <option value="90">1h 30 min</option>
-  </select>
+    <input type="text" id="observaciones" placeholder="Observaciones">
 
-  <label>Hora:</label>
-  <select id="hora"></select>
+    <label>Duración:</label>
+    <select id="duracion">
+      <option value="60">1 hora</option>
+      <option value="90">1h 30 min</option>
+    </select>
 
-  <button onclick="agendar()">Agendar</button>
-</div>
+    <label>Fecha:</label>
+    <input type="date" id="fecha" required>
 
-<h2>Turnos del día</h2>
-<div id="lista"></div>
+    <label>Hora:</label>
+    <select id="hora"></select>
+
+    <button type="submit">Agregar turno</button>
+  </form>
+</section>
+
+<section>
+  <h2>Historial de Pacientes</h2>
+  <div id="lista-pacientes"></div>
+</section>
 
 <script src="script.js"></script>
-
 </body>
 </html>
