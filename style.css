@@ -1,42 +1,54 @@
 body {
   font-family: Arial;
-  padding: 20px;
   background: #f5f5f5;
+  margin: 0;
 }
 
-h1 {
-  color: #4CAF50;
-}
-
-.form {
-  background: white;
+header {
+  background: #4CAF50;
+  color: white;
   padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 20px;
+  text-align: center;
+  font-size: 1.3rem;
 }
 
+section {
+  margin: 10px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 📱 optimizado para dedo */
 input, select, button {
-  display: block;
-  margin: 10px 0;
-  padding: 10px;
-  width: 100%;
+  padding: 14px;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 }
 
 button {
   background: #4CAF50;
   color: white;
   border: none;
-  cursor: pointer;
+  font-weight: bold;
 }
 
+/* 📋 turnos */
 .turno {
   background: white;
-  padding: 10px;
+  padding: 15px;
   margin: 10px 0;
-  border-left: 5px solid #4CAF50;
+  border-radius: 10px;
+  border-left: 6px solid #4CAF50;
+  font-size: 1.1rem;
 }
 
-.turno button {
-  width: auto;
-  margin-right: 5px;
+/* scroll cómodo */
+#agenda, #lista-pacientes {
+  max-height: 300px;
+  overflow-y: auto;
 }
