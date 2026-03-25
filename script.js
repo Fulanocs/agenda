@@ -1,73 +1,95 @@
+<script>
 const fechaInput = document.getElementById("fecha");
 const horaSelect = document.getElementById("hora");
-const listaPacientes = document.getElementById("lista-pacientes"); // Contenedor del historial
-const agendaContainer = document.getElementById("agenda"); // Contenedor de la agenda del día
+const listaPacientes = document.getElementById("lista-pacientes");
+const agendaContainer = document.getElementById("agenda");
 
-let turnos = []; // Aquí se guardarán los turnos
+let turnos = [];
 
-// Función para cargar los turnos desde el localStorage
+// ================= UTILIDADES =================
+
+function convertirAMinutos(hora) {
+  let [h, m] = hora.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutosAHora(min) {
+  let h = Math.floor(min / 60);
+  let m = min % 60;
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+}
+
+// ================= LOCAL STORAGE =================
+
 function cargarTurnos() {
-  const turnosGuardados = localStorage.getItem('turnos');
-  if (turnosGuardados) {
-    turnos = JSON.parse(turnosGuardados); // Parsear la cadena JSON y cargar los turnos
-  }
+  const data = localStorage.getItem('turnos');
+  if (data) turnos = JSON.parse(data);
 }
 
-// Guardar los turnos en el localStorage
 function guardarTurnos() {
-  localStorage.setItem('turnos', JSON.stringify(turnos)); // Guardar como JSON
+  localStorage.setItem('turnos', JSON.stringify(turnos));
 }
 
-// Generar horas de 8 AM a 6 PM
+// ================= HORARIOS =================
+
 function generarHoras() {
   let horas = [];
-  for (let h = 8; h <= 18; h++) {
-    horas.push(`${h.toString().padStart(2, "0")}:00`);
+  let inicio = 8 * 60;
+  let fin = 18 * 60;
+
+  for (let i = inicio; i <= fin; i += 30) {
+    horas.push(minutosAHora(i));
   }
+
   return horas;
 }
 
-// Cargar las horas disponibles según la fecha seleccionada
 function cargarHoras(fecha) {
-  horaSelect.innerHTML = ""; // Limpiar las opciones de horas
-  let horas = generarHoras(); // Obtener las horas posibles (8:00 - 18:00)
+  horaSelect.innerHTML = "";
+  let horas = generarHoras();
 
-  // Verificar si hay turnos para la fecha seleccionada
-  let horasOcupadas = turnos.filter(t => t.fecha === fecha).map(t => t.hora);
+  let turnosDelDia = turnos.filter(t => t.fecha === fecha);
 
   horas.forEach(hora => {
     let option = document.createElement("option");
     option.value = hora;
     option.textContent = hora;
 
-    // Si la hora ya está ocupada, deshabilitarla
-    if (horasOcupadas.includes(hora)) {
-      option.disabled = true;  
+    let horaMin = convertirAMinutos(hora);
+
+    let ocupada = turnosDelDia.some(t => {
+      let inicio = convertirAMinutos(t.hora);
+      let fin = inicio + parseInt(t.duracion);
+      return horaMin >= inicio && horaMin < fin;
+    });
+
+    if (ocupada) {
+      option.disabled = true;
       option.textContent += " (Ocupado)";
     }
 
-    horaSelect.appendChild(option);  // Añadir la opción al selector
+    horaSelect.appendChild(option);
   });
 
-  horaSelect.disabled = false; // Habilitar el selector de horas una vez que se haya cargado
+  horaSelect.disabled = false;
 }
 
-// Evento para cargar las horas cuando se seleccione una fecha
+// ================= EVENTOS =================
+
 fechaInput.addEventListener("change", () => {
-  let fecha = fechaInput.value;
-  if (fecha) {
-    cargarHoras(fecha); // Cargar las horas disponibles para la fecha seleccionada
-  }
+  if (fechaInput.value) cargarHoras(fechaInput.value);
 });
 
-// Función para actualizar el historial de pacientes
-function actualizarHistorial() {
-  listaPacientes.innerHTML = ""; // Limpiar historial
-  turnos.forEach(turno => {
-    const divPaciente = document.createElement("div");
-    divPaciente.classList.add("paciente");
+// ================= HISTORIAL =================
 
-    divPaciente.innerHTML = `
+function actualizarHistorial() {
+  listaPacientes.innerHTML = "";
+
+  turnos.forEach(turno => {
+    const div = document.createElement("div");
+    div.classList.add("paciente");
+
+    div.innerHTML = `
       <p><strong>Nombre:</strong> ${turno.nombre}</p>
       <p><strong>Fecha:</strong> ${turno.fecha}</p>
       <p><strong>Hora:</strong> ${turno.hora}</p>
@@ -75,93 +97,105 @@ function actualizarHistorial() {
       <p><strong>Observaciones:</strong> ${turno.observaciones}</p>
     `;
 
-    listaPacientes.appendChild(divPaciente);
+    listaPacientes.appendChild(div);
   });
 }
 
-// Función para mostrar los turnos del día (agenda)
-function mostrarAgendaDelDia() {
-  const fechaHoy = new Date().toISOString().split('T')[0]; // Fecha actual en formato YYYY-MM-DD
-  const turnosHoy = turnos.filter(turno => turno.fecha === fechaHoy);
+// ================= AGENDA =================
 
-  agendaContainer.innerHTML = ""; // Limpiar la agenda
+function mostrarAgendaDelDia() {
+  const hoy = new Date().toISOString().split('T')[0];
+  const turnosHoy = turnos.filter(t => t.fecha === hoy);
+
+  agendaContainer.innerHTML = "";
 
   if (turnosHoy.length === 0) {
-    agendaContainer.innerHTML = "<p>No hay turnos programados para hoy.</p>";
-  } else {
-    turnosHoy.forEach(turno => {
-      const divTurno = document.createElement("div");
-      divTurno.classList.add("turno");
-
-      divTurno.innerHTML = `
-        <div class="turno-header">
-          <p><strong>Paciente:</strong> ${turno.nombre}</p>
-          <p><strong>Hora:</strong> ${turno.hora}</p>
-        </div>
-        <div class="turno-body">
-          <p><strong>Duración:</strong> ${turno.duracion === '60' ? '1 hora' : '1h 30 min'}</p>
-          <p><strong>Observaciones:</strong> ${turno.observaciones}</p>
-          <button class="atendido-btn" onclick="marcarAtendido('${turno.hora}')">
-            ${turno.atendido ? "Atendido" : "Marcar como atendido"}
-          </button>
-        </div>
-      `;
-
-      agendaContainer.appendChild(divTurno);
-    });
+    agendaContainer.innerHTML = "<p>No hay turnos hoy.</p>";
+    return;
   }
+
+  turnosHoy.forEach(turno => {
+    const div = document.createElement("div");
+    div.classList.add("turno");
+
+    let inicio = convertirAMinutos(turno.hora);
+    let fin = inicio + parseInt(turno.duracion);
+
+    div.innerHTML = `
+      <p><strong>${turno.nombre}</strong></p>
+      <p>${minutosAHora(inicio)} - ${minutosAHora(fin)}</p>
+      <p>${turno.observaciones}</p>
+      <button onclick="marcarAtendido('${turno.hora}')">
+        ${turno.atendido ? "Atendido" : "Marcar atendido"}
+      </button>
+    `;
+
+    agendaContainer.appendChild(div);
+  });
 }
 
-// Función para marcar un turno como atendido
+// ================= ATENDIDO =================
+
 function marcarAtendido(hora) {
-  const turno = turnos.find(t => t.hora === hora);
-  if (turno) {
-    turno.atendido = !turno.atendido; // Cambiar el estado de atendido
-    guardarTurnos(); // Guardar los turnos actualizados en localStorage
-    mostrarAgendaDelDia(); // Volver a mostrar la agenda actualizada
+  let t = turnos.find(x => x.hora === hora);
+  if (t) {
+    t.atendido = !t.atendido;
+    guardarTurnos();
+    mostrarAgendaDelDia();
   }
 }
 
-// Evento para guardar el turno
+// ================= FORM =================
+
 document.getElementById("form-turno").addEventListener("submit", function(e) {
   e.preventDefault();
 
-  // Crear objeto del turno
+  let nuevoInicio = convertirAMinutos(horaSelect.value);
+  let duracion = parseInt(document.getElementById("duracion").value);
+  let nuevoFin = nuevoInicio + duracion;
+
+  let fecha = fechaInput.value;
+
+  let conflicto = turnos.some(t => {
+    if (t.fecha !== fecha) return false;
+
+    let inicio = convertirAMinutos(t.hora);
+    let fin = inicio + parseInt(t.duracion);
+
+    return !(nuevoFin <= inicio || nuevoInicio >= fin);
+  });
+
+  if (conflicto) {
+    alert("Ese horario se superpone con otro turno");
+    return;
+  }
+
   let turno = {
     nombre: document.getElementById("nombre").value,
     telefono: document.getElementById("telefono").value,
     observaciones: document.getElementById("observaciones").value,
-    duracion: document.getElementById("duracion").value, // Duración seleccionada (60 o 90 minutos)
-    fecha: fechaInput.value,
+    duracion: document.getElementById("duracion").value,
+    fecha: fecha,
     hora: horaSelect.value,
-    atendido: false // Inicialmente no ha sido atendido
+    atendido: false
   };
 
-  // Guardar el turno en el array de turnos
   turnos.push(turno);
 
-  // Mostrar alerta
-  alert("Turno agregado correctamente");
+  alert("Turno guardado");
 
-  // Guardar los turnos en el localStorage
   guardarTurnos();
-
-  // Actualizar el historial de pacientes
   actualizarHistorial();
-
-  // Mostrar los turnos de hoy en la agenda
   mostrarAgendaDelDia();
+  cargarHoras(fecha);
 
-  // Recargar las horas disponibles para la fecha seleccionada
-  cargarHoras(turno.fecha);
-
-  // Resetear formulario y deshabilitar la selección de hora
   this.reset();
   horaSelect.disabled = true;
 });
 
-// Cargar los turnos desde el localStorage al cargar la página
-cargarTurnos();
+// ================= INIT =================
 
-// Mostrar la agenda del día al cargar la página
+cargarTurnos();
+actualizarHistorial();
 mostrarAgendaDelDia();
+</script>
