@@ -5,7 +5,7 @@ const lista = document.getElementById("lista-pacientes");
 
 let turnos = JSON.parse(localStorage.getItem("turnos")) || [];
 
-// 🔹 Generar horarios cada 30 min
+// 🔹 Horarios
 function generarHoras() {
   let horas = [];
   for (let h = 8; h < 18; h++) {
@@ -16,25 +16,22 @@ function generarHoras() {
   return horas;
 }
 
-// 🔹 Detectar ocupadas
+// 🔹 Ocupadas
 function horasOcupadas(fecha) {
   let ocupadas = [];
 
-  turnos
-    .filter(t => t.fecha === fecha)
-    .forEach(t => {
-      let [h, m] = t.hora.split(":").map(Number);
-      let inicio = h * 60 + m;
-      let duracion = parseInt(t.duracion);
+  turnos.filter(t => t.fecha === fecha).forEach(t => {
+    let [h, m] = t.hora.split(":").map(Number);
+    let inicio = h * 60 + m;
+    let duracion = parseInt(t.duracion);
 
-      for (let i = 0; i < duracion; i += 30) {
-        let total = inicio + i;
-        let hh = Math.floor(total / 60).toString().padStart(2, "0");
-        let mm = (total % 60).toString().padStart(2, "0");
-
-        ocupadas.push(`${hh}:${mm}`);
-      }
-    });
+    for (let i = 0; i < duracion; i += 30) {
+      let total = inicio + i;
+      let hh = Math.floor(total / 60).toString().padStart(2, "0");
+      let mm = (total % 60).toString().padStart(2, "0");
+      ocupadas.push(`${hh}:${mm}`);
+    }
+  });
 
   return ocupadas;
 }
@@ -59,7 +56,6 @@ function cargarHoras(fecha) {
     horaSelect.appendChild(op);
   });
 
-  // seleccionar primera libre
   for (let o of horaSelect.options) {
     if (!o.disabled) {
       horaSelect.value = o.value;
@@ -89,21 +85,50 @@ document.getElementById("form-turno").addEventListener("submit", e => {
   mostrarHistorial();
   cargarHoras(turno.fecha);
 
-  // 📲 WhatsApp
-  let msg = `Hola ${turno.nombre}, tu turno:
-📅 ${turno.fecha}
-⏰ ${turno.hora}`;
-
-  let num = turno.telefono.replace(/\D/g, "");
-  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`);
+  generarPDF(turno);
 
   e.target.reset();
-
-  // foco para seguir rápido
   document.getElementById("nombre").focus();
 });
 
-// 🔹 Agenda del día
+// 📄 PDF CON LOGO
+function generarPDF(turno) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  let img = new Image();
+  img.src = "logo.png";
+
+  img.onload = function () {
+
+    // logo
+    doc.addImage(img, "PNG", 80, 10, 50, 50);
+
+    // titulo
+    doc.setFontSize(18);
+    doc.text("COMPROBANTE DE TURNO", 105, 70, null, null, "center");
+
+    doc.line(20, 75, 190, 75);
+
+    doc.setFontSize(12);
+
+    doc.text(`Paciente: ${turno.nombre}`, 20, 90);
+    doc.text(`Teléfono: ${turno.telefono}`, 20, 100);
+    doc.text(`Fecha: ${turno.fecha}`, 20, 110);
+    doc.text(`Hora: ${turno.hora}`, 20, 120);
+    doc.text(`Duración: ${turno.duracion == 60 ? "1h" : "1h 30m"}`, 20, 130);
+
+    if (turno.observaciones) {
+      doc.text(`Observaciones: ${turno.observaciones}`, 20, 140);
+    }
+
+    doc.text("Gracias por confiar en nosotros", 105, 170, null, null, "center");
+
+    doc.save(`Turno_${turno.nombre}.pdf`);
+  };
+}
+
+// 🔹 Agenda
 function mostrarAgenda() {
   let hoy = new Date().toISOString().split("T")[0];
 
@@ -161,9 +186,6 @@ function recordatorios() {
 
 setInterval(recordatorios, 60000);
 
-// eventos
-fecha.addEventListener("change", () => cargarHoras(fecha.value));
-
 // iniciar
 let hoy = new Date().toISOString().split("T")[0];
 fecha.value = hoy;
@@ -172,7 +194,8 @@ cargarHoras(hoy);
 mostrarAgenda();
 mostrarHistorial();
 
-// foco inicial (celular)
 window.onload = () => {
   document.getElementById("nombre").focus();
 };
+
+fecha.addEventListener("change", () => cargarHoras(fecha.value));
