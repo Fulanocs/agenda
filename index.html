@@ -4,10 +4,12 @@
   <meta charset="UTF-8">
   <title>Agenda Celular</title>
 
-  <!-- 📱 IMPORTANTE -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel="stylesheet" href="style.css">
+
+  <!-- PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -24,9 +26,7 @@
   <h2>Nuevo Turno</h2>
   <form id="form-turno">
     <input type="text" id="nombre" placeholder="Nombre paciente" required>
-    
-    <input type="tel" id="telefono" placeholder="Teléfono (598...)" required>
-
+    <input type="tel" id="telefono" placeholder="Teléfono" required>
     <input type="text" id="observaciones" placeholder="Observaciones">
 
     <label>Duración:</label>
