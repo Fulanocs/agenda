@@ -1,51 +1,185 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda Celular con Notificaciones</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Agenda de Turnos</title>
 </head>
+
 <body>
-  <header>
-    <h1>Agenda Celular</h1>
-  </header>
 
-  <section id="agenda-container">
-    <h2>Agenda del Día</h2>
-    <div id="agenda"></div> <!--  se mostran los turnos de hoy -->
-  </section>
+<h2>Agregar Turno</h2>
 
-  <section id="nuevo-turno">
-    <h2>Nuevo Turno</h2>
-    <form id="form-turno">
-      <input type="text" id="nombre" placeholder="Nombre paciente" required>
-      <input type="tel" id="telefono" placeholder="Teléfono" required>
-      <input type="text" id="observaciones" placeholder="Observaciones">
-      <label>Duración:</label>
-      <select id="duracion">
-        <option value="60">1 hora</option>
-        <option value="90">1h 30 min</option>
-      </select>
-      
-      <!--  fecha -->
-      <label>Fecha:</label>
-      <input type="date" id="fecha" required>
+<form id="form-turno">
+  <input type="text" id="nombre" placeholder="Nombre" required><br><br>
+  <input type="text" id="telefono" placeholder="Teléfono"><br><br>
 
-      <!--  hora -->
-      <label>Hora:</label>
-      <select id="hora" disabled></select>
-      
-      <button type="submit">Agregar turno</button>
-    </form>
-  </section>
+  <input type="date" id="fecha" required><br><br>
 
-  <section id="historial">
-    <h2>Historial de Pacientes</h2>
-    <input type="text" id="buscar" placeholder="Buscar paciente...">
-    <div id="lista-pacientes"></div> <!-- Aquí se mostrarán los pacientes -->
-  </section>
+  <select id="hora"></select><br><br>
 
-  <script src="script.js"></script>
+  <select id="duracion">
+    <option value="60">60 minutos</option>
+    <option value="90">90 minutos</option>
+  </select><br><br>
+
+  <textarea id="observaciones" placeholder="Observaciones"></textarea><br><br>
+
+  <button type="submit">Guardar turno</button>
+</form>
+
+<hr>
+
+<h2>Agenda de hoy</h2>
+<div id="agenda"></div>
+
+<script>
+const fechaInput = document.getElementById("fecha");
+const horaSelect = document.getElementById("hora");
+const agendaContainer = document.getElementById("agenda");
+
+let turnos = [];
+
+// ===== UTIL =====
+function convertirAMinutos(hora) {
+  let [h, m] = hora.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function minutosAHora(min) {
+  let h = Math.floor(min / 60);
+  let m = min % 60;
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+}
+
+// ===== STORAGE =====
+function cargarTurnos() {
+  const data = localStorage.getItem("turnos");
+  if (data) turnos = JSON.parse(data);
+}
+
+function guardarTurnos() {
+  localStorage.setItem("turnos", JSON.stringify(turnos));
+}
+
+// ===== HORARIOS =====
+function generarHoras() {
+  let horas = [];
+  for (let i = 8 * 60; i <= 18 * 60; i += 30) {
+    horas.push(minutosAHora(i));
+  }
+  return horas;
+}
+
+function cargarHoras(fecha) {
+  horaSelect.innerHTML = "";
+
+  let horas = generarHoras();
+  let turnosDelDia = turnos.filter(t => t.fecha === fecha);
+
+  horas.forEach(hora => {
+    let option = document.createElement("option");
+    option.value = hora;
+    option.textContent = hora;
+
+    let horaMin = convertirAMinutos(hora);
+
+    let ocupada = turnosDelDia.some(t => {
+      let inicio = convertirAMinutos(t.hora);
+      let fin = inicio + parseInt(t.duracion);
+      return horaMin >= inicio && horaMin < fin;
+    });
+
+    if (ocupada) {
+      option.disabled = true;
+      option.textContent += " (Ocupado)";
+    }
+
+    horaSelect.appendChild(option);
+  });
+}
+
+// ===== EVENTO FECHA =====
+fechaInput.addEventListener("change", () => {
+  if (fechaInput.value) cargarHoras(fechaInput.value);
+});
+
+// ===== FORM =====
+document.getElementById("form-turno").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  let fecha = fechaInput.value;
+  let hora = horaSelect.value;
+  let duracion = parseInt(document.getElementById("duracion").value);
+
+  let nuevoInicio = convertirAMinutos(hora);
+  let nuevoFin = nuevoInicio + duracion;
+
+  let conflicto = turnos.some(t => {
+    if (t.fecha !== fecha) return false;
+
+    let inicio = convertirAMinutos(t.hora);
+    let fin = inicio + parseInt(t.duracion);
+
+    return !(nuevoFin <= inicio || nuevoInicio >= fin);
+  });
+
+  if (conflicto) {
+    alert("Ese horario ya está ocupado");
+    return;
+  }
+
+  let turno = {
+    nombre: document.getElementById("nombre").value,
+    telefono: document.getElementById("telefono").value,
+    observaciones: document.getElementById("observaciones").value,
+    duracion: duracion,
+    fecha: fecha,
+    hora: hora
+  };
+
+  turnos.push(turno);
+  guardarTurnos();
+
+  alert("Turno guardado");
+
+  cargarHoras(fecha);
+  mostrarAgenda();
+
+  this.reset();
+});
+
+// ===== AGENDA =====
+function mostrarAgenda() {
+  const hoy = new Date().toISOString().split("T")[0];
+  let turnosHoy = turnos.filter(t => t.fecha === hoy);
+
+  agendaContainer.innerHTML = "";
+
+  turnosHoy.forEach(t => {
+    let inicio = convertirAMinutos(t.hora);
+    let fin = inicio + parseInt(t.duracion);
+
+    let div = document.createElement("div");
+    div.innerHTML = `
+      <p><strong>${t.nombre}</strong></p>
+      <p>${minutosAHora(inicio)} - ${minutosAHora(fin)}</p>
+      <hr>
+    `;
+
+    agendaContainer.appendChild(div);
+  });
+}
+
+// ===== INIT =====
+cargarTurnos();
+
+// cargar fecha actual automáticamente
+let hoy = new Date().toISOString().split("T")[0];
+fechaInput.value = hoy;
+cargarHoras(hoy);
+mostrarAgenda();
+
+</script>
+
 </body>
 </html>
