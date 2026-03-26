@@ -1,7 +1,7 @@
 const usuarioActivo = localStorage.getItem("usuarioActivo");
 
 if (!usuarioActivo) {
-  location.href = "index.html";
+  location.href = "agenda.html";
 }
 
 function logout() {
