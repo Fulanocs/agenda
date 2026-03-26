@@ -1,34 +1,54 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agenda</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Agenda Celular</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
-<div class="container">
-  <h2>Agenda de Turnos</h2>
+<header>
+  <h1>Agenda Celular</h1>
+</header>
 
-  <input type="date" id="fecha">
+<section>
+  <h2>Agenda del Día</h2>
+  <div id="agenda"></div>
+</section>
 
-  <select id="hora"></select>
+<section>
+  <h2>Nuevo Turno</h2>
+  <form id="form-turno">
+    <input type="text" id="nombre" placeholder="Nombre paciente" required>
+    <input type="tel" id="telefono" placeholder="Teléfono" required>
+    <input type="text" id="observaciones" placeholder="Observaciones">
 
-  <select id="duracion">
-    <option value="60">60 min</option>
-    <option value="90">90 min</option>
-  </select>
+    <label>Duración:</label>
+    <select id="duracion">
+      <option value="60">1 hora</option>
+      <option value="90">1h 30 min</option>
+    </select>
 
-  <input type="text" id="nombre" placeholder="Nombre paciente">
-  <input type="text" id="obs" placeholder="Observaciones">
+    <label>Fecha:</label>
+    <input type="date" id="fecha" required>
 
-  <button onclick="guardarTurno()">Guardar Turno</button>
+    <label>Hora:</label>
+    <select id="hora"></select>
 
-  <button onclick="compartirTurnos()">Compartir</button>
+    <button type="submit">Agregar turno</button>
+  </form>
+</section>
 
-  <div id="lista"></div>
-</div>
+<section>
+  <h2>Historial de Pacientes</h2>
+  <div id="lista-pacientes"></div>
+</section>
 
 <script src="script.js"></script>
 </body>
