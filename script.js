@@ -4,9 +4,13 @@ const agenda = document.getElementById("agenda");
 const lista = document.getElementById("lista-pacientes");
 const duracionSelect = document.getElementById("duracion");
 
-let turnos = JSON.parse(localStorage.getItem("turnos")) || [];
+const filtroFecha = document.getElementById("filtro-fecha");
+const buscador = document.getElementById("buscador");
 
-// 🔹 HORAS
+let turnos = JSON.parse(localStorage.getItem("turnos")) || [];
+let editandoIndex = null;
+
+// HORAS
 function generarHoras() {
   let horas = [];
   for (let h = 8; h < 21; h++) {
@@ -16,28 +20,30 @@ function generarHoras() {
   return horas;
 }
 
-// 🔹 OCUPADAS
-function horasOcupadas(fecha) {
+// OCUPADAS
+function horasOcupadas(fechaSel, ignorarIndex = null) {
   let ocupadas = [];
 
-  turnos.filter(t => t.fecha === fecha).forEach(t => {
-    let [h, m] = t.hora.split(":").map(Number);
-    let inicio = h * 60 + m;
+  turnos.forEach((t, i) => {
+    if (t.fecha === fechaSel && i !== ignorarIndex) {
+      let [h, m] = t.hora.split(":").map(Number);
+      let inicio = h * 60 + m;
 
-    for (let i = 0; i < t.duracion; i += 30) {
-      let total = inicio + i;
-      let hh = Math.floor(total / 60).toString().padStart(2, "0");
-      let mm = (total % 60).toString().padStart(2, "0");
-      ocupadas.push(`${hh}:${mm}`);
+      for (let x = 0; x < t.duracion; x += 30) {
+        let total = inicio + x;
+        let hh = Math.floor(total / 60).toString().padStart(2, "0");
+        let mm = (total % 60).toString().padStart(2, "0");
+        ocupadas.push(`${hh}:${mm}`);
+      }
     }
   });
 
   return ocupadas;
 }
 
-// 🔴 VALIDAR SOLAPAMIENTO
+// VALIDAR
 function sePisa(fechaSel, hora, duracion) {
-  let ocupadas = horasOcupadas(fechaSel);
+  let ocupadas = horasOcupadas(fechaSel, editandoIndex);
 
   let [h, m] = hora.split(":").map(Number);
   let inicio = h * 60 + m;
@@ -53,7 +59,7 @@ function sePisa(fechaSel, hora, duracion) {
   return false;
 }
 
-// 🔹 CARGAR HORAS
+// CARGAR HORAS
 function cargarHoras() {
   horaSelect.innerHTML = "";
 
@@ -74,7 +80,7 @@ function cargarHoras() {
   });
 }
 
-// 🔥 AGENDAR
+// AGREGAR / EDITAR
 document.getElementById("form-turno").addEventListener("submit", e => {
   e.preventDefault();
 
@@ -87,25 +93,38 @@ document.getElementById("form-turno").addEventListener("submit", e => {
     hora: hora.value
   };
 
-  turnos.push(turno);
+  if (editandoIndex !== null) {
+    turnos[editandoIndex] = turno;
+    editandoIndex = null;
+  } else {
+    turnos.push(turno);
+  }
+
   localStorage.setItem("turnos", JSON.stringify(turnos));
 
   actualizarTodo();
   e.target.reset();
 });
 
-// 🔹 MOSTRAR AGENDA
+// MOSTRAR AGENDA
 function mostrarAgenda() {
   agenda.innerHTML = "";
 
-  let hoy = new Date().toISOString().split("T")[0];
+  let fechaSel = filtroFecha.value || new Date().toISOString().split("T")[0];
+  let texto = buscador.value.toLowerCase();
   let ahora = new Date();
 
-  let hoyTurnos = turnos
-    .filter(t => t.fecha === hoy)
+  let filtrados = turnos
+    .map((t, i) => ({ ...t, index: i }))
+    .filter(t => t.fecha === fechaSel && t.nombre.toLowerCase().includes(texto))
     .sort((a, b) => a.hora.localeCompare(b.hora));
 
-  hoyTurnos.forEach(t => {
+  if (filtrados.length === 0) {
+    agenda.innerHTML = "<p>No hay turnos.</p>";
+    return;
+  }
+
+  filtrados.forEach(t => {
     let div = document.createElement("div");
     div.className = "turno";
 
@@ -119,30 +138,52 @@ function mostrarAgenda() {
       <strong>${t.hora}</strong> - ${t.nombre}<br>
       ${t.duracion == 60 ? "1h" : "1h 30m"}<br>
       ${t.observaciones || ""}
+
       <button class="btn-compartir">Compartir</button>
+      <button class="btn-editar">Editar</button>
+      <button class="btn-eliminar">Eliminar</button>
     `;
 
-    // 📲 COMPARTIR
-    div.querySelector(".btn-compartir").addEventListener("click", () => {
+    // compartir
+    div.querySelector(".btn-compartir").onclick = () => {
       let texto = `Turno confirmado:
 Paciente: ${t.nombre}
 Fecha: ${t.fecha}
-Hora: ${t.hora}
-Duración: ${t.duracion == 60 ? "1h" : "1h 30m"}`;
+Hora: ${t.hora}`;
 
-      if (navigator.share) {
-        navigator.share({ text: texto });
-      } else {
-        navigator.clipboard.writeText(texto);
-        alert("Copiado para compartir");
+      navigator.share
+        ? navigator.share({ text: texto })
+        : alert(texto);
+    };
+
+    // editar
+    div.querySelector(".btn-editar").onclick = () => {
+      nombre.value = t.nombre;
+      telefono.value = t.telefono;
+      observaciones.value = t.observaciones;
+      duracion.value = t.duracion;
+      fecha.value = t.fecha;
+
+      editandoIndex = t.index;
+
+      cargarHoras();
+      setTimeout(() => horaSelect.value = t.hora, 100);
+    };
+
+    // eliminar
+    div.querySelector(".btn-eliminar").onclick = () => {
+      if (confirm("¿Eliminar turno?")) {
+        turnos.splice(t.index, 1);
+        localStorage.setItem("turnos", JSON.stringify(turnos));
+        actualizarTodo();
       }
-    });
+    };
 
     agenda.appendChild(div);
   });
 }
 
-// 🔹 HISTORIAL
+// HISTORIAL
 function mostrarHistorial() {
   lista.innerHTML = "";
 
@@ -157,7 +198,7 @@ function mostrarHistorial() {
   });
 }
 
-// 🔄 ACTUALIZAR
+// ACTUALIZAR
 function actualizarTodo() {
   cargarHoras();
   mostrarAgenda();
@@ -167,9 +208,12 @@ function actualizarTodo() {
 // EVENTOS
 fecha.addEventListener("change", actualizarTodo);
 duracionSelect.addEventListener("change", cargarHoras);
+filtroFecha.addEventListener("change", mostrarAgenda);
+buscador.addEventListener("input", mostrarAgenda);
 
 // INICIO
 let hoy = new Date().toISOString().split("T")[0];
 fecha.value = hoy;
+filtroFecha.value = hoy;
 
 actualizarTodo();
