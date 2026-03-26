@@ -1,77 +1,98 @@
-let lista = JSON.parse(localStorage.getItem("pacientes")) || [];
+const fechaInput = document.getElementById("fecha");
+const horaSelect = document.getElementById("hora");
+const lista = document.getElementById("lista-pacientes");
 
-function guardarPaciente() {
-  const nombre = document.getElementById("nombre").value;
-  const fecha = document.getElementById("fecha").value;
-  const hora = document.getElementById("hora").value;
+let turnos = JSON.parse(localStorage.getItem("turnos")) || [];
 
-  if (!nombre || !fecha || !hora) {
-    alert("Completa todos los campos");
-    return;
+function guardar() {
+  localStorage.setItem("turnos", JSON.stringify(turnos));
+}
+
+// Generar horas disponibles
+function generarHoras() {
+  const fecha = fechaInput.value;
+  horaSelect.innerHTML = "";
+
+  for (let h = 8; h < 21; h++) {
+    for (let m of [0, 30]) {
+
+      let hora = (h < 10 ? "0" + h : h) + ":" + (m === 0 ? "00" : "30");
+
+      if (!estaOcupado(fecha, hora)) {
+        let opt = document.createElement("option");
+        opt.value = hora;
+        opt.textContent = hora;
+        horaSelect.appendChild(opt);
+      }
+    }
   }
-
-  const paciente = { nombre, fecha, hora };
-  lista.push(paciente);
-
-  localStorage.setItem("pacientes", JSON.stringify(lista));
-
-  limpiarCampos();
-  mostrarLista();
 }
 
-function limpiarCampos() {
-  document.getElementById("nombre").value = "";
-  document.getElementById("fecha").value = "";
-  document.getElementById("hora").value = "";
+// Convertir hora a minutos
+function aMinutos(hora) {
+  let [h, m] = hora.split(":").map(Number);
+  return h * 60 + m;
 }
 
-function mostrarLista() {
-  const contenedor = document.getElementById("lista");
-  contenedor.innerHTML = "";
+// Verificar si se pisa
+function estaOcupado(fecha, horaNueva) {
+  let inicioNuevo = aMinutos(horaNueva);
 
-  lista.forEach((p, index) => {
-    contenedor.innerHTML += `
-      <div class="card">
-        <strong>${p.nombre}</strong>
-        <p>📅 ${p.fecha}</p>
-        <p>⏰ ${p.hora}</p>
+  return turnos.some(t => {
+    if (t.fecha !== fecha) return false;
 
-        <button class="btn-compartir" onclick="compartir(${index})">
-          Compartir
-        </button>
+    let inicio = aMinutos(t.hora);
+    let fin = inicio + parseInt(t.duracion);
 
-        <button class="btn-borrar" onclick="eliminar(${index})">
-          Eliminar
-        </button>
-      </div>
-    `;
+    return (inicioNuevo >= inicio && inicioNuevo < fin);
   });
 }
 
-function compartir(index) {
-  const p = lista[index];
+// Agendar turno
+function agendar() {
+  const fecha = fechaInput.value;
+  const hora = horaSelect.value;
+  const nombre = document.getElementById("nombre").value;
+  const obs = document.getElementById("obs").value;
+  const duracion = document.getElementById("duracion").value;
 
-  const texto = `Hola ${p.nombre}, te confirmo tu cita:
-📅 Fecha: ${p.fecha}
-⏰ Hora: ${p.hora}`;
-
-  if (navigator.share) {
-    navigator.share({
-      title: "Cita",
-      text: texto
-    });
-  } else {
-    navigator.clipboard.writeText(texto);
-    alert("Texto copiado, podés pegarlo en WhatsApp");
+  if (!fecha || !hora || !nombre) {
+    alert("Completa todo");
+    return;
   }
+
+  turnos.push({ fecha, hora, nombre, obs, duracion });
+  guardar();
+  mostrar();
+  generarHoras();
 }
 
-function eliminar(index) {
-  if (confirm("¿Eliminar este turno?")) {
-    lista.splice(index, 1);
-    localStorage.setItem("pacientes", JSON.stringify(lista));
-    mostrarLista();
-  }
+// Mostrar turnos
+function mostrar() {
+  lista.innerHTML = "";
+
+  turnos.forEach((t, i) => {
+    let li = document.createElement("li");
+    li.innerHTML = `
+      ${t.fecha} - ${t.hora} (${t.duracion} min)
+      <br><b>${t.nombre}</b>
+      <br>${t.obs}
+      <br>
+      <button onclick="eliminar(${i})">Eliminar</button>
+    `;
+    lista.appendChild(li);
+  });
 }
 
-mostrarLista();
+// Eliminar turno
+function eliminar(i) {
+  turnos.splice(i, 1);
+  guardar();
+  mostrar();
+  generarHoras();
+}
+
+// Actualizar horas al cambiar fecha
+fechaInput.addEventListener("change", generarHoras);
+
+mostrar();
