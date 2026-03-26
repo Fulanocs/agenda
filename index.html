@@ -1,34 +1,35 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Agenda Turnos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>Agenda de Turnos</h2>
+<div class="container">
+  <h2>Agenda de Turnos</h2>
 
-<input type="text" id="nombre" placeholder="Nombre del paciente">
+  <input type="date" id="fecha">
 
-<input type="date" id="fecha">
+  <select id="hora"></select>
 
-<div id="horas"></div>
+  <select id="duracion">
+    <option value="60">60 min</option>
+    <option value="90">90 min</option>
+  </select>
 
-<div class="duracion">
-  <button onclick="seleccionarDuracion(60)">60 min</button>
-  <button onclick="seleccionarDuracion(90)">90 min</button>
+  <input type="text" id="nombre" placeholder="Nombre paciente">
+  <input type="text" id="obs" placeholder="Observaciones">
+
+  <button onclick="guardarTurno()">Guardar Turno</button>
+
+  <button onclick="compartirTurnos()">Compartir</button>
+
+  <div id="lista"></div>
 </div>
 
-<textarea id="obs" placeholder="Observaciones"></textarea>
-
-<button id="btn-agendar">Agendar</button>
-<button id="btn-compartir">Compartir turno</button>
-
-<h3>Turnos</h3>
-<div id="lista-turnos"></div>
-
-<script src="script.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
