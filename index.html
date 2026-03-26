@@ -2,54 +2,72 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agenda Celular</title>
-
+  <title>Agenda</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f4f4;
+      padding: 10px;
+      margin: 0;
+    }
 
-  <!-- PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    h2 {
+      text-align: center;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 6px 0;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      border: none;
+    }
+
+    .guardar {
+      background: #007bff;
+      color: white;
+    }
+
+    .card {
+      background: white;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .btn-compartir {
+      background: #25D366;
+      color: white;
+      margin-top: 8px;
+    }
+
+    .btn-borrar {
+      background: #dc3545;
+      color: white;
+      margin-top: 5px;
+    }
+  </style>
 </head>
 <body>
 
-<header>
-  <h1>Agenda Celular</h1>
-</header>
+  <h2>Agenda de Pacientes</h2>
 
-<section>
-  <h2>Agenda del Día</h2>
-  <div id="agenda"></div>
-</section>
+  <input type="text" id="nombre" placeholder="Nombre del paciente">
+  <input type="date" id="fecha">
+  <input type="time" id="hora">
 
-<section>
-  <h2>Nuevo Turno</h2>
-  <form id="form-turno">
-    <input type="text" id="nombre" placeholder="Nombre paciente" required>
-    <input type="tel" id="telefono" placeholder="Teléfono" required>
-    <input type="text" id="observaciones" placeholder="Observaciones">
+  <button class="guardar" onclick="guardarPaciente()">Guardar turno</button>
 
-    <label>Duración:</label>
-    <select id="duracion">
-      <option value="60">1 hora</option>
-      <option value="90">1h 30 min</option>
-    </select>
+  <div id="lista"></div>
 
-    <label>Fecha:</label>
-    <input type="date" id="fecha" required>
-
-    <label>Hora:</label>
-    <select id="hora"></select>
-
-    <button type="submit">Agregar turno</button>
-  </form>
-</section>
-
-<section>
-  <h2>Historial de Pacientes</h2>
-  <div id="lista-pacientes"></div>
-</section>
-
-<script src="script.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
