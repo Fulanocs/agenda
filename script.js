@@ -65,6 +65,9 @@ function agendar() {
   guardar();
   mostrar();
   generarHoras();
+
+  document.getElementById("nombre").value = "";
+  document.getElementById("obs").value = "";
 }
 
 // Mostrar turnos
@@ -78,10 +81,34 @@ function mostrar() {
       <br><b>${t.nombre}</b>
       <br>${t.obs}
       <br>
+      <button onclick="compartir(${i})">Compartir</button>
       <button onclick="eliminar(${i})">Eliminar</button>
     `;
     lista.appendChild(li);
   });
+}
+
+// 🔥 COMPARTIR TURNO
+function compartir(i) {
+  const t = turnos[i];
+
+  const texto = `📅 Turno
+Paciente: ${t.nombre}
+Fecha: ${t.fecha}
+Hora: ${t.hora}
+Duración: ${t.duracion} min
+Observaciones: ${t.obs}`;
+
+  if (navigator.share) {
+    navigator.share({
+      title: "Turno",
+      text: texto
+    });
+  } else {
+    // Alternativa si no funciona share
+    navigator.clipboard.writeText(texto);
+    alert("Turno copiado para compartir");
+  }
 }
 
 // Eliminar turno
@@ -92,7 +119,7 @@ function eliminar(i) {
   generarHoras();
 }
 
-// Actualizar horas al cambiar fecha
+// Eventos
 fechaInput.addEventListener("change", generarHoras);
 
 mostrar();
