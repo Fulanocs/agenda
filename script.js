@@ -1,125 +1,124 @@
-let turnos = [];
-let horaSeleccionada = null;
-let duracionSeleccionada = 60;
-let ultimoTurno = null;
+const fechaInput = document.getElementById("fecha");
+const horaSelect = document.getElementById("hora");
+const lista = document.getElementById("lista");
 
-const horasContainer = document.getElementById("horas");
-const lista = document.getElementById("lista-turnos");
+// Cargar horas al cambiar fecha
+fechaInput.addEventListener("change", cargarHorasDisponibles);
 
-// generar horarios
-function generarHoras() {
-  horasContainer.innerHTML = "";
+// -------- BLOQUEO DE HORAS --------
+function cargarHorasDisponibles() {
+  const fecha = fechaInput.value;
+  horaSelect.innerHTML = "";
 
-  for (let i = 8; i <= 21; i++) {
-    let hora = i.toString().padStart(2, "0") + ":00";
+  if (!fecha) return;
 
-    const btn = document.createElement("div");
-    btn.textContent = hora;
-    btn.classList.add("hora");
+  const turnos = JSON.parse(localStorage.getItem("turnos")) || [];
+  const turnosDelDia = turnos.filter(t => t.fecha === fecha);
 
-    btn.onclick = () => {
-      document.querySelectorAll(".hora").forEach(h => h.classList.remove("seleccionada"));
-      btn.classList.add("seleccionada");
-      horaSeleccionada = hora;
-    };
+  let horasBloqueadas = [];
 
-    horasContainer.appendChild(btn);
+  turnosDelDia.forEach(t => {
+    horasBloqueadas.push(t.hora);
+
+    if (t.duracion === "90") {
+      let [h] = t.hora.split(":").map(Number);
+      h += 1;
+      horasBloqueadas.push(h.toString().padStart(2, "0") + ":00");
+    }
+  });
+
+  for (let h = 8; h <= 21; h++) {
+    let hora = h.toString().padStart(2, "0") + ":00";
+
+    if (!horasBloqueadas.includes(hora)) {
+      const option = document.createElement("option");
+      option.value = hora;
+      option.textContent = hora;
+      horaSelect.appendChild(option);
+    }
   }
 }
 
-generarHoras();
-
-// seleccionar duración
-function seleccionarDuracion(min) {
-  duracionSeleccionada = min;
-}
-
-// agendar turno
-document.getElementById("btn-agendar").onclick = () => {
+// -------- GUARDAR TURNO --------
+function guardarTurno() {
+  const fecha = fechaInput.value;
+  const hora = horaSelect.value;
   const nombre = document.getElementById("nombre").value;
-  const fecha = document.getElementById("fecha").value;
   const obs = document.getElementById("obs").value;
+  const duracion = document.getElementById("duracion").value;
 
-  if (!nombre || !fecha || !horaSeleccionada) {
-    alert("Completa todos los campos");
+  if (!fecha || !hora || !nombre) {
+    alert("Completa los datos");
     return;
   }
 
-  const turno = {
-    nombre,
-    fecha,
-    hora: horaSeleccionada,
-    duracion: duracionSeleccionada,
-    obs
-  };
+  const turnos = JSON.parse(localStorage.getItem("turnos")) || [];
 
-  turnos.push(turno);
-  ultimoTurno = turno;
+  turnos.push({ fecha, hora, nombre, obs, duracion });
 
-  renderizarTurnos();
-};
+  localStorage.setItem("turnos", JSON.stringify(turnos));
 
-// ordenar + pintar
-function renderizarTurnos() {
-  lista.innerHTML = "";
+  cargarHorasDisponibles();
+  mostrarTurnos();
+}
 
+// -------- MOSTRAR TURNOS --------
+function mostrarTurnos() {
+  const turnos = JSON.parse(localStorage.getItem("turnos")) || [];
+
+  // Ordenar por fecha y hora
   turnos.sort((a, b) => {
-    return new Date(`${a.fecha}T${a.hora}`) - new Date(`${b.fecha}T${b.hora}`);
+    return new Date(a.fecha + " " + a.hora) - new Date(b.fecha + " " + b.hora);
   });
 
-  turnos.forEach((t, index) => {
+  lista.innerHTML = "";
+
+  const ahora = new Date();
+
+  turnos.forEach(t => {
     const div = document.createElement("div");
-    div.className = "turno " + obtenerClaseTurno(t);
+    div.className = "turno";
+
+    const fechaHora = new Date(t.fecha + " " + t.hora);
+
+    const diferencia = (fechaHora - ahora) / 60000;
+
+    if (diferencia < 0) {
+      div.classList.add("pasado");
+    } else if (diferencia < 60) {
+      div.classList.add("proximo");
+    }
 
     div.innerHTML = `
-      <b>${t.hora}</b> - ${t.nombre}<br>
-      ${t.fecha}<br>
+      <strong>${t.fecha} ${t.hora}</strong><br>
+      ${t.nombre}<br>
       ${t.duracion} min<br>
-      ${t.obs || ""}
-      <br><button onclick="eliminar(${index})">Eliminar</button>
+      ${t.obs}
     `;
 
     lista.appendChild(div);
   });
 }
 
-// colores por tiempo
-function obtenerClaseTurno(turno) {
-  const ahora = new Date();
-  const fechaTurno = new Date(`${turno.fecha}T${turno.hora}`);
-  const diff = (fechaTurno - ahora) / 60000;
+// -------- COMPARTIR --------
+function compartirTurnos() {
+  const turnos = JSON.parse(localStorage.getItem("turnos")) || [];
 
-  if (diff <= 0) return "pasado";
-  if (diff <= 60) return "proximo";
-  return "";
-}
+  let texto = "Agenda de turnos:\n\n";
 
-// eliminar turno
-function eliminar(i) {
-  turnos.splice(i, 1);
-  renderizarTurnos();
-}
-
-// compartir
-document.getElementById("btn-compartir").onclick = () => {
-  if (!ultimoTurno) {
-    alert("No hay turno");
-    return;
-  }
-
-  const texto = `Paciente: ${ultimoTurno.nombre}
-Fecha: ${ultimoTurno.fecha}
-Hora: ${ultimoTurno.hora}
-Duración: ${ultimoTurno.duracion} min
-Observaciones: ${ultimoTurno.obs}`;
+  turnos.forEach(t => {
+    texto += `${t.fecha} ${t.hora} - ${t.nombre} (${t.duracion} min)\n`;
+  });
 
   if (navigator.share) {
-    navigator.share({ text: texto });
+    navigator.share({
+      title: "Agenda",
+      text: texto
+    });
   } else {
-    navigator.clipboard.writeText(texto);
-    alert("Copiado para compartir");
+    alert(texto);
   }
-};
+}
 
-// actualizar colores cada minuto
-setInterval(renderizarTurnos, 60000);
+// Inicial
+mostrarTurnos();
