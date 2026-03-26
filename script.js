@@ -143,17 +143,21 @@ function mostrarAgenda() {
       <button class="btn-editar">Editar</button>
       <button class="btn-eliminar">Eliminar</button>
     `;
-
+    //resetea
+function formatearFecha(fecha) {
+  let [anio, mes, dia] = fecha.split("-");
+  return `${dia}/${mes}/${anio}`;
+}
     // compartir
     div.querySelector(".btn-compartir").onclick = () => {
-     let texto = `🗓️ Turno confirmado
+    let texto = `🗓️ Turno confirmado
 
 👤 Nombre: ${t.nombre}
-📅 Fecha: ${t.fecha}
+📅 Fecha: ${formatearFecha(t.fecha)}
 ⏰ Hora: ${t.hora}
 ⏱️ Duración: ${t.duracion == 60 ? "1 hora" : "1 hora 30 min"}
 📝 Observación: ${t.observaciones || "Sin observaciones"}`;
-
+      
       navigator.share
         ? navigator.share({ text: texto })
         : alert(texto);
