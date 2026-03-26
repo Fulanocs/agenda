@@ -147,7 +147,7 @@ function mostrarAgenda() {
     // compartir
     div.querySelector(".btn-compartir").onclick = () => {
       let texto = `Turno confirmado:
-Paciente: ${t.nombre}
+Nombre: ${t.nombre}
 Fecha: ${t.fecha}
 Hora: ${t.hora}`;
 
