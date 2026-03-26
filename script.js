@@ -146,12 +146,13 @@ function mostrarAgenda() {
 
     // compartir
     div.querySelector(".btn-compartir").onclick = () => {
-     let texto = `Turno confirmado:
-Nombre: ${t.nombre}
-Fecha: ${t.fecha}
-Hora: ${t.hora}
-Duración: ${t.duracion == 60 ? "1 hora" : "1 hora 30 min"}
-Observación: ${t.observaciones || "Sin observaciones"}`;
+     let texto = `🗓️ Turno confirmado
+
+👤 Nombre: ${t.nombre}
+📅 Fecha: ${t.fecha}
+⏰ Hora: ${t.hora}
+⏱️ Duración: ${t.duracion == 60 ? "1 hora" : "1 hora 30 min"}
+📝 Observación: ${t.observaciones || "Sin observaciones"}`;
 
       navigator.share
         ? navigator.share({ text: texto })
