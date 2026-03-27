@@ -10,35 +10,43 @@ const buscador = document.getElementById("buscador");
 let turnos = JSON.parse(localStorage.getItem("turnos")) || [];
 let editandoIndex = null;
 
-function formatearFecha(fecha) {
-  let [anio, mes, dia] = fecha.split("-");
-  return `${dia}/${mes}/${anio}`;
+// 🔥 UTILIDADES
+function horaAMinutos(hora) {
+  const [h, m] = hora.split(":").map(Number);
+  return h * 60 + m;
 }
 
-// HORAS
+function minutosAHora(min) {
+  let h = Math.floor(min / 60).toString().padStart(2, "0");
+  let m = (min % 60).toString().padStart(2, "0");
+  return `${h}:${m}`;
+}
+
+function formatearFecha(f) {
+  let [a, m, d] = f.split("-");
+  return `${d}/${m}/${a}`;
+}
+
+// 🕐 HORAS
 function generarHoras() {
   let horas = [];
   for (let h = 8; h < 21; h++) {
-    horas.push(`${h.toString().padStart(2, "0")}:00`);
-    horas.push(`${h.toString().padStart(2, "0")}:30`);
+    horas.push(`${String(h).padStart(2, "0")}:00`);
+    horas.push(`${String(h).padStart(2, "0")}:30`);
   }
   return horas;
 }
 
-// OCUPADAS
-function horasOcupadas(fechaSel, ignorarIndex = null) {
+// 🔒 OCUPADAS
+function horasOcupadas(fechaSel, ignorar = null) {
   let ocupadas = [];
 
   turnos.forEach((t, i) => {
-    if (t.fecha === fechaSel && i !== ignorarIndex) {
-      let [h, m] = t.hora.split(":").map(Number);
-      let inicio = h * 60 + m;
+    if (t.fecha === fechaSel && i !== ignorar) {
+      let inicio = horaAMinutos(t.hora);
 
       for (let x = 0; x < t.duracion; x += 30) {
-        let total = inicio + x;
-        let hh = Math.floor(total / 60).toString().padStart(2, "0");
-        let mm = (total % 60).toString().padStart(2, "0");
-        ocupadas.push(`${hh}:${mm}`);
+        ocupadas.push(minutosAHora(inicio + x));
       }
     }
   });
@@ -46,46 +54,39 @@ function horasOcupadas(fechaSel, ignorarIndex = null) {
   return ocupadas;
 }
 
-// VALIDAR
+// 🚫 VALIDAR
 function sePisa(fechaSel, hora, duracion) {
   let ocupadas = horasOcupadas(fechaSel, editandoIndex);
-
-  let [h, m] = hora.split(":").map(Number);
-  let inicio = h * 60 + m;
+  let inicio = horaAMinutos(hora);
 
   for (let i = 0; i < duracion; i += 30) {
-    let total = inicio + i;
-    let hh = Math.floor(total / 60).toString().padStart(2, "0");
-    let mm = (total % 60).toString().padStart(2, "0");
-
-    if (ocupadas.includes(`${hh}:${mm}`)) return true;
+    if (ocupadas.includes(minutosAHora(inicio + i))) return true;
   }
 
   return false;
 }
 
-// CARGAR HORAS
+// ⏰ CARGAR HORAS
 function cargarHoras() {
   horaSelect.innerHTML = "";
 
-  let horas = generarHoras();
-  let duracion = parseInt(duracionSelect.value);
+  let duracion = parseInt(duracionSelect.value) || 60;
 
-  horas.forEach(h => {
+  generarHoras().forEach(h => {
     let op = document.createElement("option");
     op.value = h;
     op.textContent = h;
 
     if (sePisa(fecha.value, h, duracion)) {
       op.disabled = true;
-      op.textContent += " (ocupado)";
+      op.textContent += " ❌";
     }
 
     horaSelect.appendChild(op);
   });
 }
 
-// AGREGAR / EDITAR
+// ➕ GUARDAR
 document.getElementById("form-turno").addEventListener("submit", e => {
   e.preventDefault();
 
@@ -106,63 +107,64 @@ document.getElementById("form-turno").addEventListener("submit", e => {
   }
 
   localStorage.setItem("turnos", JSON.stringify(turnos));
-
   actualizarTodo();
   e.target.reset();
 });
 
-// MOSTRAR AGENDA
+// 🚀 BUSCADOR ULTRA RÁPIDO
+let timeout;
+buscador.addEventListener("input", () => {
+  clearTimeout(timeout);
+  timeout = setTimeout(mostrarAgenda, 200); // debounce
+});
+
+// 📋 AGENDA
 function mostrarAgenda() {
   agenda.innerHTML = "";
 
-  let fechaSel = filtroFecha.value || new Date().toISOString().split("T")[0];
+  let fechaSel = filtroFecha.value;
   let texto = buscador.value.toLowerCase();
-  let ahora = new Date();
 
   let filtrados = turnos
     .map((t, i) => ({ ...t, index: i }))
-    .filter(t => t.fecha === fechaSel && t.nombre.toLowerCase().includes(texto))
+    .filter(t =>
+      t.fecha === fechaSel &&
+      t.nombre.toLowerCase().includes(texto)
+    )
     .sort((a, b) => a.hora.localeCompare(b.hora));
-
-  if (filtrados.length === 0) {
-    agenda.innerHTML = "<p>No hay turnos.</p>";
-    return;
-  }
 
   filtrados.forEach(t => {
     let div = document.createElement("div");
     div.className = "turno";
 
-    let fechaHora = new Date(`${t.fecha}T${t.hora}`);
-    let diff = (fechaHora - ahora) / 60000;
+    let ahora = new Date();
+    let turnoDate = new Date(`${t.fecha}T${t.hora}`);
+    let diff = (turnoDate - ahora) / 60000;
 
-    if (diff <= 30 && diff > 0) div.classList.add("proximo");
+    if (diff < 30 && diff > 0) div.classList.add("proximo");
     if (diff <= 0) div.classList.add("pasado");
 
     div.innerHTML = `
       <strong>${t.hora}</strong> - ${t.nombre}<br>
-      ${t.duracion == 60 ? "1h" : "1h 30m"}<br>
+      ${t.duracion} min<br>
       ${t.observaciones || ""}
 
       <button class="btn-compartir">Compartir</button>
       <button class="btn-editar">Editar</button>
       <button class="btn-eliminar">Eliminar</button>
     `;
-   
 
     // compartir
     div.querySelector(".btn-compartir").onclick = () => {
-    let texto = `🗓️ Turno confirmado
+      let mensaje = `📅 Turno confirmado
+Nombre: ${t.nombre}
+Fecha: ${formatearFecha(t.fecha)}
+Hora: ${t.hora}
+Duración: ${t.duracion} min`;
 
- Nombre: ${t.nombre}
- Fecha: ${formatearFecha(t.fecha)}
- Hora: ${t.hora}
- Duración: ${t.duracion == 60 ? "1 hora" : "1 hora 30 min"}`;
-
-      
       navigator.share
-        ? navigator.share({ text: texto })
-        : alert(texto);
+        ? navigator.share({ text: mensaje })
+        : alert(mensaje);
     };
 
     // editar
@@ -174,8 +176,8 @@ function mostrarAgenda() {
       fecha.value = t.fecha;
 
       editandoIndex = t.index;
-
       cargarHoras();
+
       setTimeout(() => horaSelect.value = t.hora, 100);
     };
 
@@ -192,22 +194,20 @@ function mostrarAgenda() {
   });
 }
 
-// HISTORIAL
+// 📜 HISTORIAL
 function mostrarHistorial() {
   lista.innerHTML = "";
 
-  let ordenados = [...turnos].sort((a, b) =>
-    (a.fecha + a.hora).localeCompare(b.fecha + b.hora)
-  );
-
-  ordenados.forEach(t => {
-    let div = document.createElement("div");
-    div.innerHTML = `${t.nombre} - ${t.fecha} ${t.hora}`;
-    lista.appendChild(div);
-  });
+  [...turnos]
+    .sort((a, b) => (a.fecha + a.hora).localeCompare(b.fecha + b.hora))
+    .forEach(t => {
+      let div = document.createElement("div");
+      div.textContent = `${t.nombre} - ${t.fecha} ${t.hora}`;
+      lista.appendChild(div);
+    });
 }
 
-// ACTUALIZAR
+// 🔄 ACTUALIZAR
 function actualizarTodo() {
   cargarHoras();
   mostrarAgenda();
@@ -218,9 +218,8 @@ function actualizarTodo() {
 fecha.addEventListener("change", actualizarTodo);
 duracionSelect.addEventListener("change", cargarHoras);
 filtroFecha.addEventListener("change", mostrarAgenda);
-buscador.addEventListener("input", mostrarAgenda);
 
-// INICIO
+// INIT
 let hoy = new Date().toISOString().split("T")[0];
 fecha.value = hoy;
 filtroFecha.value = hoy;
