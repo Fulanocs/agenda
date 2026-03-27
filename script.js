@@ -157,7 +157,7 @@ function mostrarAgenda() {
  Nombre: ${t.nombre}
  Fecha: ${formatearFecha(t.fecha)}
  Hora: ${t.hora}
- Duración: ${t.duracion == 60 ? "1 hora" : "1 hora 30 min"}
+ Duración: ${t.duracion == 60 ? "1 hora" : "1 hora 30 min"}`;
 
       
       navigator.share
