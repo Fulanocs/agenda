@@ -10,6 +10,11 @@ const buscador = document.getElementById("buscador");
 let turnos = JSON.parse(localStorage.getItem("turnos")) || [];
 let editandoIndex = null;
 
+function formatearFecha(fecha) {
+  let [anio, mes, dia] = fecha.split("-");
+  return `${dia}/${mes}/${anio}`;
+}
+
 // HORAS
 function generarHoras() {
   let horas = [];
@@ -143,11 +148,8 @@ function mostrarAgenda() {
       <button class="btn-editar">Editar</button>
       <button class="btn-eliminar">Eliminar</button>
     `;
-    //resetea
-function formatearFecha(fecha) {
-  let [anio, mes, dia] = fecha.split("-");
-  return `${dia}/${mes}/${anio}`;
-}
+   
+
     // compartir
     div.querySelector(".btn-compartir").onclick = () => {
     let texto = `🗓️ Turno confirmado
